@@ -1,0 +1,27 @@
+{
+  "name": "background-tasks",
+  "version": "1.0.0",
+  "description": "Queue background tasks for NodeJS on another thread",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Paultje52/background-tasks.git"
+  },
+  "keywords": [
+    "worker",
+    "nodejs",
+    "background",
+    "thread",
+    "threads",
+    "background"
+  ],
+  "author": "Paultje52",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Paultje52/background-tasks/issues"
+  },
+  "homepage": "https://github.com/Paultje52/background-tasks#readme"
+}
