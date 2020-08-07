@@ -117,7 +117,7 @@ class backgroundTasks {
   }
   _sendDataToEachWorker(data) {
     this.workers.forEach(worker => {
-      _sendDataToProcess(worker.process, data);
+      this._sendDataToProcess(worker.process, data);
     });
   }
   _sendDataToProcess(process, data) {
