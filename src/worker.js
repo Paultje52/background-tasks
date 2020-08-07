@@ -16,6 +16,9 @@ workerThreads.parentPort.on("message", (msg) => {
     // New variable
     for (let i in msg) {
       let content = msg[i];
+      try {
+        content = JSON.parse(content);
+      } catch(e) {}
       if (typeof content === "object" && content._nodeBackgroundTasksPrototype && content.instance && content.className && content.code) {
         let tmp = JSON.parse(content.instance);
         tmp.__proto__ = eval(`${content.code};\n${content.className}.prototype`);
@@ -24,13 +27,13 @@ workerThreads.parentPort.on("message", (msg) => {
       vars[i] = content;
     }
   } else if (id == 1) {
-    let id = msg.id;
-    let code = msg.task;
+    if (!msg.args) msg.args = [];
     eval(`
-      let _res = ${code};
+      let _res = ${msg.task};
+      let _args = ${JSON.stringify(msg.args)};
       setTimeout(async () => {
         workerThreads.parentPort.postMessage(
-          JSON.stringify({id: "${id}", result: await _res()})
+          JSON.stringify({id: "${msg.id}", result: await _res(..._args)})
         );
       });`);
   }
