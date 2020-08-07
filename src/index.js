@@ -5,7 +5,7 @@ const workerThreads = require("worker_threads");
 const path = require("path");
 let totalThreads = require("os").cpus().length;
 
-class BackgroundTasks {
+class backgroundTasks {
   constructor({
     threads = totalThreads-1,
     variables = {}
@@ -28,38 +28,63 @@ class BackgroundTasks {
     }
   }
   
-  executeNow(func, force = false) {
+  executeNow(...args) {
+    let func = args.pop();
+    let force = false;
+    if (typeof func === "boolean") {
+      force = func;
+      func = args.pop();
+    }
     return new Promise((res) => {
       let worker = this.workers.sort((a, b) => a.tasks.length-b.tasks.length)[0];
-      if (force) return this._startWorkerTask(worker, func).then(res);
+      if (force) return this._startWorkerTask(worker, func, args).then(res);
       worker.tasks = [{
         callback: res,
-        code: func
+        code: func,
+        args: args
       }, ...worker.tasks];
     });
   }
   
-  executeWhen(test, func, checkInterval = 100) {
+  executeWhen(...args) {
+    let func = args.pop();
+    let checkInterval = 100;
+    if (typeof func === "number") {
+      checkInterval = func;
+      func = args.pop();
+    }
+    let test = args.pop();
     return new Promise((res) => {
       let i = setInterval(() => {
         if (!test()) return;
         clearInterval(i);
-        this.executeNow(func).then(res);
+        this.executeNow(...args, func).then(res);
       }, checkInterval);
     });
   }
   
-  executeIn(time, func) {
+  executeIn(...args) {
+    let func = args.pop();
+    let time = args.pop();
     return new Promise((res) => {
       setTimeout(() => {
-        this.executeNow(func).then(res);
+        this.executeNow(...args, func).then(res);
       }, time);
     });
   }
   
-  executeEach(time, func, callback = () => {}) {
+  executeEach(...args) {
+    let callback = args.pop();
+    let func = args.pop();
+    let time;
+    if (typeof func === "number") {
+      time = func;
+      func = callback;
+      callback = () => {};
+    }
+    if (!time) time = args.pop();
     return setInterval(() => {
-      this.executeNow(func).then(callback);
+      this.executeNow(...args, func).then(callback);
     }, time);
   }
   
@@ -117,15 +142,15 @@ class BackgroundTasks {
     if (this._stopedWorkers.includes(worker)) return;
     let task = worker.tasks.shift();
     if (!task) return setTimeout(() => {this._checkWorkerLoop(worker)}, 100);
-    let result = await this._startWorkerTask(worker, task.code);
+    let result = await this._startWorkerTask(worker, task.code, task.args);
     task.callback(result);
     this._checkWorkerLoop(worker);
   }
-  _startWorkerTask(worker, code) {
+  _startWorkerTask(worker, code, args) {
     return new Promise((res) => {
       let id = Math.random().toString(36).substring(7);
       this._callbacks[id] = res;
-      this._sendDataToProcess(worker.process, `1${JSON.stringify({id: id, task: code.toString()})}`);
+      this._sendDataToProcess(worker.process, `1${JSON.stringify({id: id, args: args, task: code.toString()})}`);
     });
   }
   _addWorkerListeners(worker) {
@@ -176,4 +201,4 @@ class BackgroundTasks {
   }
 }
 
-module.exports = BackgroundTasks;
+module.exports = backgroundTasks;
